@@ -1,0 +1,130 @@
+export const matches = [
+  // 🟢 UPCOMING MATCHES
+  {
+    homeTeam: "Chelsea",
+    awayTeam: "Juventus",
+    homeScore: 0,
+    awayScore: 0,
+    status: "not_started",
+    time: "Starts at 19:30",
+    events: [],
+    startTime: new Date("2025-07-22T19:30:00Z"),
+    updatedAt: new Date(),
+  },
+  {
+    homeTeam: "Atletico Madrid",
+    awayTeam: "AC Milan",
+    homeScore: 0,
+    awayScore: 0,
+    status: "not_started",
+    time: "Starts at 21:00",
+    events: [],
+    startTime: new Date("2025-07-22T21:00:00Z"),
+    updatedAt: new Date(),
+  },
+
+  // 🔴 LIVE MATCHES
+  {
+    homeTeam: "Liverpool",
+    awayTeam: "Napoli",
+    homeScore: 2,
+    awayScore: 2,
+    status: "live",
+    time: "58'",
+    events: [
+      {
+        type: "goal",
+        minute: "11",
+        player: "Mohamed Salah",
+        team: "Liverpool",
+      },
+      {
+        type: "goal",
+        minute: "20",
+        player: "Victor Osimhen",
+        team: "Napoli",
+      },
+      {
+        type: "goal",
+        minute: "42",
+        player: "Luis Díaz",
+        team: "Liverpool",
+      },
+      {
+        type: "goal",
+        minute: "51",
+        player: "Piotr Zieliński",
+        team: "Napoli",
+      },
+    ],
+    startTime: new Date("2025-07-20T18:00:00Z"),
+    updatedAt: new Date(),
+  },
+  {
+    homeTeam: "Ajax",
+    awayTeam: "Lyon",
+    homeScore: 1,
+    awayScore: 0,
+    status: "live",
+    time: "39'",
+    events: [
+      {
+        type: "goal",
+        minute: "24",
+        player: "Steven Bergwijn",
+        team: "Ajax",
+      },
+    ],
+    startTime: new Date("2025-07-20T19:00:00Z"),
+    updatedAt: new Date(),
+  },
+
+  // ⚫ FINISHED MATCHES
+  {
+    homeTeam: "Tottenham",
+    awayTeam: "RB Leipzig",
+    homeScore: 1,
+    awayScore: 3,
+    status: "finished",
+    time: "FT",
+    events: [
+      {
+        type: "goal",
+        minute: "5",
+        player: "Timo Werner",
+        team: "RB Leipzig",
+      },
+      {
+        type: "goal",
+        minute: "19",
+        player: "Christopher Nkunku",
+        team: "RB Leipzig",
+      },
+      {
+        type: "goal",
+        minute: "52",
+        player: "Heung-Min Son",
+        team: "Tottenham",
+      },
+      {
+        type: "goal",
+        minute: "75",
+        player: "Dani Olmo",
+        team: "RB Leipzig",
+      },
+    ],
+    startTime: new Date("2025-07-19T17:00:00Z"),
+    updatedAt: new Date("2025-07-19T19:00:00Z"),
+  },
+  {
+    homeTeam: "Roma",
+    awayTeam: "Sevilla",
+    homeScore: 0,
+    awayScore: 0,
+    status: "finished",
+    time: "FT",
+    events: [],
+    startTime: new Date("2025-07-19T20:00:00Z"),
+    updatedAt: new Date("2025-07-19T22:00:00Z"),
+  },
+];
