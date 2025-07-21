@@ -1,11 +1,11 @@
-const playerStats = [
+export const playerStats = [
   {
     name: "John Doe",
     team: "Team A",
     goals: 7,
     assists: 2,
     cleansheets: 1,
-    image: "/profile.webp",
+    image: "/Profile.png",
   },
   {
     name: "Jane Smith",
@@ -13,7 +13,7 @@ const playerStats = [
     goals: 4,
     assists: 6,
     cleansheets: 0,
-    image: "/profile.webp",
+    image: "/Profile.png",
   },
   {
     name: "Alex Lee",
@@ -21,7 +21,7 @@ const playerStats = [
     goals: 2,
     assists: 1,
     cleansheets: 3,
-    image: "/profile.webp",
+    image: "/Profile.png",
   },
   {
     name: "Sam Brown",
@@ -29,7 +29,7 @@ const playerStats = [
     goals: 0,
     assists: 2,
     cleansheets: 5,
-    image: "/profile.webp",
+    image: "/Profile.png",
   },
   {
     name: "Chris Johnson",
@@ -37,7 +37,7 @@ const playerStats = [
     goals: 5,
     assists: 3,
     cleansheets: 2,
-    image: "/profile.webp",
+    image: "/Profile.png",
   },
   {
     name: "Pat Taylor",
@@ -45,7 +45,7 @@ const playerStats = [
     goals: 3,
     assists: 4,
     cleansheets: 1,
-    image: "/profile.webp",
+    image: "/Profile.png",
   },
   {
     name: "Jamie White",
@@ -53,7 +53,7 @@ const playerStats = [
     goals: 6,
     assists: 0,
     cleansheets: 4,
-    image: "/profile.webp",
+    image: "/Profile.png",
   },
   {
     name: "Jordan Green",
@@ -61,7 +61,7 @@ const playerStats = [
     goals: 1,
     assists: 5,
     cleansheets: 0,
-    image: "/profile.webp",
+    image: "/Profile.png",
   },
   {
     name: "Morgan Black",
@@ -69,7 +69,7 @@ const playerStats = [
     goals: 8,
     assists: 1,
     cleansheets: 2,
-    image: "/profile.webp",
+    image: "/Profile.png",
   },
   {
     name: "Taylor Blue",
@@ -77,7 +77,7 @@ const playerStats = [
     goals: 3,
     assists: 2,
     cleansheets: 3,
-    image: "/profile.webp",
+    image: "/Profile.png",
   },
   {
     name: "Casey Red",
@@ -85,7 +85,7 @@ const playerStats = [
     goals: 4,
     assists: 4,
     cleansheets: 1,
-    image: "/profile.webp",
+    image: "/Profile.png",
   },
   {
     name: "Riley Gold",
@@ -93,7 +93,7 @@ const playerStats = [
     goals: 2,
     assists: 3,
     cleansheets: 5,
-    image: "/profile.webp",
+    image: "/Profile.png",
   },
   {
     name: "Alexis Silver",
@@ -101,7 +101,7 @@ const playerStats = [
     goals: 0,
     assists: 1,
     cleansheets: 4,
-    image: "/profile.webp",
+    image: "/Profile.png",
   },
   {
     name: "Jamie Purple",
@@ -109,7 +109,7 @@ const playerStats = [
     goals: 5,
     assists: 2,
     cleansheets: 0,
-    image: "/profile.webp",
+    image: "/Profile.png",
   },
   {
     name: "Taylor Orange",
@@ -117,7 +117,7 @@ const playerStats = [
     goals: 3,
     assists: 6,
     cleansheets: 2,
-    image: "/profile.webp",
+    image: "/Profile.png",
   },
   {
     name: "Jordan Pink",
@@ -125,7 +125,7 @@ const playerStats = [
     goals: 1,
     assists: 4,
     cleansheets: 3,
-    image: "/profile.webp",
+    image: "/Profile.png",
   },
   {
     name: "Morgan Cyan",
@@ -133,7 +133,7 @@ const playerStats = [
     goals: 6,
     assists: 1,
     cleansheets: 1,
-    image: "/profile.webp",
+    image: "/Profile.png",
   },
   {
     name: "Casey Magenta",
@@ -141,7 +141,7 @@ const playerStats = [
     goals: 2,
     assists: 5,
     cleansheets: 0,
-    image: "/profile.webp",
+    image: "/Profile.png",
   },
   {
     name: "Riley Brown",
@@ -149,7 +149,7 @@ const playerStats = [
     goals: 4,
     assists: 3,
     cleansheets: 4,
-    image: "/profile.webp",
+    image: "/Profile.png",
   },
   {
     name: "Alexis White",
@@ -157,6 +157,6 @@ const playerStats = [
     goals: 3,
     assists: 2,
     cleansheets: 2,
-    image: "/profile.webp",
+    image: "/Profile.png",
   },
 ];

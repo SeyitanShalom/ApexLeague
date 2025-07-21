@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono, Baloo_Da_2 } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,10 +28,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${balooda.className} antialiased max-w-3xl mx-auto mb-16 px-4 sm:px-6 lg:px-8`}
+        className={`${balooda.className} antialiased max-w-3xl mx-auto mb-10  px-4 sm:px-6 lg:px-8`}
       >
         <Navbar />
         {children}
+        <Footer />
       </body>
     </html>
   );
