@@ -8,7 +8,9 @@ const StatSection = ({ title, data, statKey }) => {
   const displayData = showAll ? data : data.slice(0, 3);
   return (
     <div className="mb-10 -mx-4">
-      <h2 className="font-semibold mb-2 mx-4 border-b">{title}</h2>
+      <h2 className="font-semibold mb-2 mx-4 text-(--color-primary) border-b">
+        {title}
+      </h2>
       <div className="text-sm">
         {displayData.map((player, index) => (
           <div

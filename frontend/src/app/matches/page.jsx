@@ -107,6 +107,9 @@ const MatchPage = () => {
   return (
     <div className="max-w-2xl mx-auto">
       {/* <h1 className="text-2xl font-bold mb-6 text-center">Match Schedule</h1> */}
+      <h1 className="text-(--color-primary) font-bold text-xl mb-5 py-1 -mx-4 text-center">
+        Match Schedule
+      </h1>
 
       {dateKeys.map((date, index) => (
         <div key={index} className="mb-10">

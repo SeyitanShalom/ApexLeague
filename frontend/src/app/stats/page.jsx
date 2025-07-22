@@ -11,7 +11,7 @@ const Stats = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-xl text-(--color-primary) font-bold mb-5 text-center">
+      <h1 className="text-(--color-primary) font-bold text-xl mb-5 py-1 -mx-4 text-center">
         Player Statistics
       </h1>
 

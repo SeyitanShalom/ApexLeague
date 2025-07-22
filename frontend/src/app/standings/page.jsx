@@ -7,7 +7,7 @@ import Image from "next/image";
 const StandingsPage = () => {
   return (
     <div className="max-w-2xl mx-auto ">
-      <h1 className="text-xl font-bold text-center text-(--color-primary)">
+      <h1 className="text-(--color-primary) font-bold text-xl mb-5 py-1 -mx-4 text-center">
         Group Standings
       </h1>
 

@@ -5,7 +5,7 @@ import Image from "next/image";
 const page = () => {
   return (
     <div>
-      <h1 className="bg-(--color-primary) text-white -mx-4 text-center py-1 mb-5">
+      <h1 className="text-(--color-primary) font-bold text-xl mb-5 py-1 -mx-4 text-center">
         Teams
       </h1>
       <div className="grid grid-cols-3 place-items-center gap-8">
