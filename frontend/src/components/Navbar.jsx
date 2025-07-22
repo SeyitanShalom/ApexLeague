@@ -48,6 +48,9 @@ const Navbar = () => {
             <Link href="/standings" onClick={() => setOpen(false)}>
               Standings
             </Link>
+            <Link href="/stats" onClick={() => setOpen(false)}>
+              Stats
+            </Link>
             <Link href="/teams" onClick={() => setOpen(false)}>
               Teams
             </Link>

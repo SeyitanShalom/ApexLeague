@@ -121,8 +121,8 @@ const MatchPage = () => {
                   <h3 className="text-sm font-medium text-gray-700 mb-2 uppercase">
                     {status.replace("_", " ")}
                   </h3>
-                  {groupedMatches[date][status].map((match) => (
-                    <MatchCard key={match._id} match={match} />
+                  {groupedMatches[date][status].map((match, index) => (
+                    <MatchCard key={index} match={match} />
                   ))}
                 </div>
               )

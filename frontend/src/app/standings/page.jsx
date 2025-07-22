@@ -2,7 +2,7 @@
 import React from "react";
 import { standings } from "@/data/standings";
 import Image from "next/image";
-import Stats from "@/components/Stats";
+// import Stats from "@/components/Stats";
 
 const StandingsPage = () => {
   return (
@@ -61,7 +61,7 @@ const StandingsPage = () => {
           </div>
         </div>
       ))}
-      <Stats />
+      {/* <Stats /> */}
     </div>
   );
 };

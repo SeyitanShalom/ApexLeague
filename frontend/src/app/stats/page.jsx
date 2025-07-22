@@ -1,6 +1,6 @@
 import React from "react";
 import { playerStats } from "@/data/stats";
-import StatSection from "./StatsSection";
+import StatSection from "@/components/StatsSection";
 
 const Stats = () => {
   const topScorers = [...playerStats].sort((a, b) => b.goals - a.goals);
@@ -10,7 +10,7 @@ const Stats = () => {
   );
 
   return (
-    <div className="max-w-4xl mx-auto py-8">
+    <div className="max-w-4xl mx-auto">
       <h1 className="text-xl text-(--color-primary) font-bold mb-5 text-center">
         Player Statistics
       </h1>
