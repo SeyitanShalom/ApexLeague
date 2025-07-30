@@ -1,8 +1,9 @@
 "use client";
 import React from "react";
-import MatchCard from "@/components/MatchCard"; // adjust the path if needed
+import MatchCard from "@/components/MatchCard";
 import dayjs from "dayjs";
 import { matches } from "@/data/matches";
+import Link from "next/link";
 
 // const matches = [
 //   // 🟢 UPCOMING
@@ -125,7 +126,9 @@ const MatchPage = () => {
                     {status.replace("_", " ")}
                   </h3>
                   {groupedMatches[date][status].map((match, index) => (
-                    <MatchCard key={index} match={match} />
+                    <Link key={index} href={`/matches/${match.id}`}>
+                      <MatchCard match={match} />
+                    </Link>
                   ))}
                 </div>
               )

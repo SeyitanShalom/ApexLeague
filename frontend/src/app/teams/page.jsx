@@ -9,8 +9,8 @@ const page = () => {
         Teams
       </h1>
       <div className="grid grid-cols-3 place-items-center gap-8">
-        {teams.map((team) => (
-          <div className="w-32 h-32 p-3 rounded-lg shadow-md flex justify-center items-center ">
+        {teams.map((team, index) => (
+          <div key={index} className="w-32 h-32 p-3 rounded-lg shadow-md flex justify-center items-center ">
             <div className="flex flex-col items-center gap-3">
               <Image
                 src={team.logo}

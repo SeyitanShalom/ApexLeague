@@ -33,7 +33,12 @@ const StandingsPage = () => {
               </thead>
               <tbody>
                 {group.teams.map((team, i) => (
-                  <tr key={i} className=" hover:bg-gray-50 text-center">
+                  <tr
+                    key={i}
+                    className={`hover:bg-gray-50 text-center ${
+                      i < 2 ? "bg-(--color-primary-light)" : ""
+                    }`}
+                  >
                     <td className="px-3 py-3 ">{team.position}</td>
                     <td className="px-3 py-3 text-left font-medium flex items-center gap-2">
                       <Image
