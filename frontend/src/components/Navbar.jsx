@@ -16,9 +16,9 @@ const Navbar = () => {
   return (
     <div className="flex justify-between items-center  py-2 relative">
       <div className="flex items-center justify-between gap-1">
-        <Image src="/JV Logo.webp" alt="Logo" width={50} height={50} />
-        <p className="text-2xl -translate-y-0.5">|</p>
         <Image src="/Apex Logo.png" alt="Logo" width={70} height={50} />
+        <p className="text-2xl -translate-y-0.5">|</p>
+        <Image src="/JV Logo.webp" alt="Logo" width={50} height={50} />
       </div>
 
       <div

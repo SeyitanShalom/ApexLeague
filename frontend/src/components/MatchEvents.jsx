@@ -41,20 +41,29 @@ const MatchEvents = () => {
   return (
     <div className="p-4 max-w-2xl mx-auto space-y-5">
       {events.map((event, index) => (
-        <div
-          key={index}
-          className="grid grid-cols-3 items-center text-sm"
-        >
+        <div key={index} className="grid grid-cols-3 items-center text-sm">
           {/* Left Event (Team A) */}
           {event.team === match.homeTeam ? (
             <div className="text-left">
               {event.type === "sub" ? (
                 <div>
-                  <p className="text-xs text-gray-500">{event.subOut}</p>
+                  <p className="text-xs text-gray-500 text-right">
+                    {event.subOut}
+                  </p>
                   <div className="flex items-center space-x-1">
-                    {getEventIcon(event.type)}
                     <p className="font-semibold">{event.subIn}</p>
+                    {getEventIcon(event.type)}
                   </div>
+                </div>
+              ) : event.type === "goal" ? (
+                <div>
+                  <div className="flex items-center justify-end space-x-1">
+                    <p className="font-semibold">{event.scorer}</p>
+                    {getEventIcon(event.type)}
+                  </div>
+                  <p className="text-xs text-gray-500 text-right">
+                    {event.assist}
+                  </p>
                 </div>
               ) : (
                 <div className="flex items-center space-x-2">
@@ -77,11 +86,23 @@ const MatchEvents = () => {
             <div className="text-right">
               {event.type === "sub" ? (
                 <div>
-                  <p className="text-xs text-gray-500">{event.subOut}</p>
+                  <p className="text-xs text-gray-500 text-left">
+                    {event.subOut}
+                  </p>
                   <div className="flex items-center justify-end space-x-1">
-                    <p className="font-semibold">{event.subIn}</p>
                     {getEventIcon(event.type)}
+                    <p className="font-semibold">{event.subIn}</p>
                   </div>
+                </div>
+              ) : event.type === "goal" ? (
+                <div>
+                  <div className="flex items-center justify-end space-x-1">
+                    {getEventIcon(event.type)}
+                    <p className="font-semibold">{event.scorer}</p>
+                  </div>
+                  <p className="text-xs text-gray-500 text-left">
+                    {event.assist}
+                  </p>
                 </div>
               ) : (
                 <div className="flex items-center justify-end space-x-2">

@@ -305,7 +305,13 @@ export const matchEvents = [
   {
     matchId: 3,
     events: [
-      { minute: 16, type: "goal", player: "Player A", team: "Team A" },
+      {
+        minute: 16,
+        type: "goal",
+        scorer: "Player A",
+        assist: "Player B",
+        team: "Team A",
+      },
       { minute: 22, type: "yellow", player: "Player B", team: "Team B" },
       {
         minute: 45,
@@ -314,7 +320,13 @@ export const matchEvents = [
         subOut: "Player D",
         team: "Team A",
       },
-      { minute: 60, type: "goal", player: "Player F", team: "Team B" },
+      {
+        minute: 60,
+        type: "goal",
+        scorer: "Player F",
+        assist: "Player E",
+        team: "Team B",
+      },
       { minute: 70, type: "red", player: "Player E", team: "Team A" },
       {
         minute: 80,
@@ -328,7 +340,13 @@ export const matchEvents = [
   {
     matchId: 4,
     events: [
-      { minute: 16, type: "goal", player: "Player G", team: "Team G" },
+      {
+        minute: 16,
+        type: "goal",
+        scorer: "Player G",
+        assist: "Player H",
+        team: "Team G",
+      },
       { minute: 22, type: "yellow", player: "Player H", team: "Team H" },
       {
         minute: 45,
@@ -337,7 +355,13 @@ export const matchEvents = [
         subOut: "Player D",
         team: "Team G",
       },
-      { minute: 60, type: "goal", player: "Player J", team: "Team H" },
+      {
+        minute: 60,
+        type: "goal",
+        scorer: "Player J",
+        assist: "Player K",
+        team: "Team H",
+      },
       { minute: 70, type: "red", player: "Player K", team: "Team G" },
       {
         minute: 80,
@@ -351,7 +375,13 @@ export const matchEvents = [
   {
     matchId: 5,
     events: [
-      { minute: 16, type: "goal", player: "Player M", team: "Team M" },
+      {
+        minute: 16,
+        type: "goal",
+        scorer: "Player M",
+        assist: "Player N",
+        team: "Team M",
+      },
       { minute: 22, type: "yellow", player: "Player N", team: "Team O" },
       {
         minute: 45,
@@ -360,7 +390,13 @@ export const matchEvents = [
         subOut: "Player P",
         team: "Team M",
       },
-      { minute: 60, type: "goal", player: "Player Q", team: "Team O" },
+      {
+        minute: 60,
+        type: "goal",
+        scorer: "Player Q",
+        assist: "Player R",
+        team: "Team O",
+      },
       { minute: 70, type: "red", player: "Player R", team: "Team M" },
       {
         minute: 80,
@@ -374,7 +410,13 @@ export const matchEvents = [
   {
     matchId: 6,
     events: [
-      { minute: 16, type: "goal", player: "Player K", team: "Team K" },
+      {
+        minute: 16,
+        type: "goal",
+        scorer: "Player K",
+        assist: "Player L",
+        team: "Team K",
+      },
       { minute: 22, type: "yellow", player: "Player L", team: "Team L" },
       {
         minute: 45,
@@ -383,7 +425,7 @@ export const matchEvents = [
         subOut: "Player N",
         team: "Team K",
       },
-      { minute: 60, type: "goal", player: "Player O", team: "Team L" },
+      { minute: 60, type: "goal", scorer: "Player O", assist: "Player P", team: "Team L" },
       { minute: 70, type: "red", player: "Player P", team: "Team K" },
       {
         minute: 80,

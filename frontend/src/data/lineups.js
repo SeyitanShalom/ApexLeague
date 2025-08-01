@@ -19,6 +19,7 @@ export const lineups = [
     matchId: 3,
     team: "Team A",
     coach: "Hansi Flick",
+    formation: "4-2-3-1",
     players: [
       { name: "Joan Garcia", position: "Goalkeeper", number: 1 },
       { name: "Jules Kounde", position: "Defender", number: 2 },
@@ -44,6 +45,7 @@ export const lineups = [
     matchId: 3,
     team: "Team B",
     coach: "Pep Guardiola",
+    formation: "4-3-3",
     players: [
       { name: "Ederson Moares", position: "Goalkeeper", number: 1 },
       { name: "Matheus Nunes", position: "Defender", number: 2 },
@@ -70,6 +72,7 @@ export const lineups = [
     matchId: 4,
     team: "Team G",
     coach: "Luis Enrique",
+    formation: "4-3-3",
     players: [
       { name: "Donnarumma", position: "Goalkeeper", number: 1 },
       { name: "Achraf Hakimi", position: "Defender", number: 2 },
@@ -95,6 +98,7 @@ export const lineups = [
     matchId: 4,
     team: "Team H",
     coach: "Diego Simeone",
+    formation: "4-4-2",
     players: [
       { name: "Jan Oblak", position: "Goalkeeper", number: 1 },
       { name: "Nahuel Molina", position: "Defender", number: 2 },
@@ -121,6 +125,7 @@ export const lineups = [
     matchId: 5,
     team: "Team M",
     coach: "Carlo Ancelotti",
+    formation: "4-3-1-2",
     players: [
       { name: "Thibaut Courtois", position: "Goalkeeper", number: 1 },
       { name: "Dani Carvajal", position: "Defender", number: 2 },
@@ -146,6 +151,7 @@ export const lineups = [
     matchId: 5,
     team: "Team O",
     coach: "Jurgen Klopp",
+    formation: "4-3-3",
     players: [
       { name: "Alisson Becker", position: "Goalkeeper", number: 1 },
       { name: "Trent Alexander-Arnold", position: "Defender", number: 2 },
