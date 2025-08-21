@@ -27,7 +27,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${balooda.className} antialiased max-w-3xl mx-auto mb-10  px-4 sm:px-6 lg:px-8`}
+        className={`${balooda.className} antialiased max-w-3xl mx-auto mb-10  px-4 sm:px-6 lg:px-8 bg-green-50`}
       >
         <Navbar />
         {children}
