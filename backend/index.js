@@ -97,7 +97,6 @@ app.get("/allteams", async (req, res) => {
 
 // Match Schema
 const MatchSchema = mongoose.Schema({
-  id: { type: Number, required: true },
   home: { type: String, required: true },
   away: { type: String, required: true },
   date: { type: String, required: true },
