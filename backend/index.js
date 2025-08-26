@@ -51,7 +51,7 @@ app.post("/upload", upload.single("image"), (req, res) => {
 // Team Schema
 const TeamSchema = mongoose.Schema(
   {
-    slug: { type: String, required: true, unique: true },
+    // slug: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     logo: { type: String, required: true },
   },
@@ -134,16 +134,22 @@ app.post("/addmatch", async (req, res) => {
   }
 });
 
-// Delete Match
-app.post("/removematch", async (req, res) => {
+// Delete Team
+app.delete("/team/:id", async (req, res) => {
   try {
-    await Match.findOneAndDelete({ id: req.body.id });
-    console.log("Match removed");
-    res.json({
-      success: true,
-      home: req.body.home,
-      away: req.body.away,
-    });
+    const { id } = req.params;
+    const deletedTeam = await Team.findByIdAndDelete(id);
+
+    if (!deletedTeam) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Team not found" });
+    }
+
+    console.log("Team removed:", deletedTeam.name);
+    res
+      .status(200)
+      .json({ success: true, message: "Team deleted successfully" });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

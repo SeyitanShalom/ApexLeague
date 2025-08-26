@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { RiDeleteBin6Line } from "react-icons/ri";
+import ScheduleForm from "./ScheduleForm";
 
 const Schedule = () => {
   const [showModal, setShowModal] = useState(false);
@@ -31,7 +32,8 @@ const Schedule = () => {
         </div>
       </div>
       {/* Modal */}
-      {showModal && (
+      {showModal  && <ScheduleForm/>}
+      {/* {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-10 flex items-center justify-center z-50 text-sm">
           <div className="bg-white rounded-lg p-6 w-[350px] shadow-lg">
             <h2 className="font-bold text-lg mb-4">Schedule New Match</h2>
@@ -129,7 +131,7 @@ const Schedule = () => {
             </form>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

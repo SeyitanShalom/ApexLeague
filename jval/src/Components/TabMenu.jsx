@@ -6,7 +6,17 @@ const TabMenu = ({page, setPage}) => {
 
   return (
     <div>
-      <div className="flex items-center justify-between bg-white -mx-4 px-4 text-sm">
+      <div className="flex items-center justify-between bg-white -mx-4 px-1 text-sm">
+        <div
+          onClick={() => setPage("teams")}
+          className={`cursor-pointer py-4 px-2 ${
+            page === "teams"
+              ? "bg-green-50 border-b-2 border-green-500"
+              : ""
+          } `}
+        >
+          <p>Teams</p>
+        </div>
         <div
           onClick={() => setPage("team lineups")}
           className={`cursor-pointer py-4 px-2 ${
@@ -23,7 +33,7 @@ const TabMenu = ({page, setPage}) => {
             page === "schedule" ? "bg-green-50 border-b-2 border-green-500" : ""
           } `}
         >
-          <p>Schedule</p>
+          <p>Schedules</p>
         </div>
         <div
           onClick={() => setPage("player stats")}
