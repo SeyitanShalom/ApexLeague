@@ -45,7 +45,7 @@ const Teams = () => {
       </div>
       <div>
         <div className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
             {teams.map((team) => (
               <div
                 key={team._id}
@@ -56,7 +56,7 @@ const Teams = () => {
                   alt={team.name}
                   className="w-18 h-18 object-contain mb-2"
                 />
-                <p className="font-medium">{team.name}</p>
+                <p className="font-medium text-center">{team.name}</p>
                 <button
                   onClick={() => handleDelete(team._id)}
                   className="mt-2 bg-red-500 text-white text-xs px-3 py-1 rounded hover:bg-red-600"

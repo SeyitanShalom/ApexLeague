@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import axios from "axios";
 
 const initialMatch = {
-  home: "",
-  away: "",
+  homeTeam: "",
+  awayTeam: "",
   date: "",
   time: "",
   venue: "",
@@ -11,7 +11,7 @@ const initialMatch = {
   score: "",
 };
 
-const MatchScheduleForm = ({ onSuccess }) => {
+const MatchScheduleForm = ({ onMatchAdded, setShowModal }) => {
   const [match, setMatch] = useState(initialMatch);
 
   const handleChange = (e) => {
@@ -24,10 +24,12 @@ const MatchScheduleForm = ({ onSuccess }) => {
       await axios.post("http://localhost:4000/addmatch", match);
       alert("Match scheduled!");
       setMatch(initialMatch);
-      if (onSuccess) onSuccess();
+      setShowModal(false);
+      onMatchAdded(); // ✅ call here only if saving worked
     } catch (err) {
       alert("Error: " + err.message);
     }
+
   };
 
   return (
@@ -39,8 +41,8 @@ const MatchScheduleForm = ({ onSuccess }) => {
             <label>Home Team</label>
             <input
               type="text"
-              name="home"
-              value={match.home}
+              name="homeTeam"
+              value={match.homeTeam}
               onChange={handleChange}
               required
               className="border px-2 py-1 rounded w-full"
@@ -50,8 +52,8 @@ const MatchScheduleForm = ({ onSuccess }) => {
             <label>Away Team</label>
             <input
               type="text"
-              name="away"
-              value={match.away}
+              name="awayTeam"
+              value={match.awayTeam}
               onChange={handleChange}
               required
               className="border px-2 py-1 rounded w-full"
@@ -92,7 +94,14 @@ const MatchScheduleForm = ({ onSuccess }) => {
           </div>
           <div>
             <label>Status</label>
-            <select
+            <input
+              type="text"
+              name="status"
+              id=""
+              value={match.status}
+              className="border px-2 py-1 rounded w-full"
+            />
+            {/* <select
               name="status"
               value={match.status}
               onChange={handleChange}
@@ -102,9 +111,9 @@ const MatchScheduleForm = ({ onSuccess }) => {
               <option value="live">Live</option>
               <option value="finished">Finished</option>
               <option value="upcoming">Upcoming</option>
-            </select>
+            </select> */}
           </div>
-          <div>
+          {/* <div>
             <label>Score</label>
             <input
               type="text"
@@ -113,13 +122,22 @@ const MatchScheduleForm = ({ onSuccess }) => {
               onChange={handleChange}
               className="border px-2 py-1 rounded w-full"
             />
+          </div> */}
+          <div className="flex justify-evenly gap-2 mt-7">
+            <button
+              type="button"
+              className="bg-gray-300 w-32 py-2 rounded cursor-pointer"
+              onClick={() => setShowModal(false)}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="bg-green-600 text-white w-32 py-2 rounded cursor-pointer"
+            >
+              Schedule Match
+            </button>
           </div>
-          <button
-            type="submit"
-            className="bg-green-600 text-white px-4 py-2 rounded"
-          >
-            Schedule Match
-          </button>
         </form>
       </div>
     </div>

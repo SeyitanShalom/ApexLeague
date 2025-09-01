@@ -43,6 +43,7 @@ const TeamForm = ({ setShowModal, onTeamAdded }) => {
       // 2️⃣ Save team with logo url
       const newTeam = { name: team.name, logo: logoUrl };
       await axios.post("http://localhost:4000/addteam", newTeam);
+      alert("Team added successfully!");
 
       setTeam(initialTeam);
       setFile(null);

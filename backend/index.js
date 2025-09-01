@@ -7,6 +7,25 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
 const cors = require("cors");
+const { Server } = require("socket.io");
+const http = require("http");
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log("client connected");
+
+  socket.on("disconnect", () => {
+    console.log("client disconnected");
+  });
+});
 
 app.use(express.json());
 app.use(cors());
@@ -95,45 +114,6 @@ app.get("/allteams", async (req, res) => {
   }
 });
 
-// Match Schema
-const MatchSchema = mongoose.Schema({
-  home: { type: String, required: true },
-  away: { type: String, required: true },
-  date: { type: String, required: true },
-  time: { type: String, required: true },
-  venue: { type: String, required: true },
-  status: {
-    type: String,
-    enum: ["live", "finished", "upcoming"],
-    required: true,
-  },
-  score: { type: String },
-});
-
-const Match = mongoose.model("Match", MatchSchema);
-
-// Add Match
-app.post("/addmatch", async (req, res) => {
-  try {
-    const { id, home, away, date, time, venue, status, score } = req.body;
-    const match = new Match({
-      id,
-      home,
-      away,
-      date,
-      time,
-      venue,
-      status,
-      score,
-    });
-    await match.save();
-    res.status(201).json({ success: true, match });
-  } catch (error) {
-    console.error("Error Adding Match", error.message);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
 // Delete Team
 app.delete("/team/:id", async (req, res) => {
   try {
@@ -154,6 +134,200 @@ app.delete("/team/:id", async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+// Match Schema
+const MatchSchema = mongoose.Schema({
+  homeTeam: { type: String, required: true },
+  awayTeam: { type: String, required: true },
+  date: { type: String, required: true },
+  time: { type: String, required: true },
+  venue: { type: String, required: true },
+  status: {
+    type: String,
+    enum: ["live", "finished", "upcoming"],
+    required: true,
+    default: "upcoming",
+  },
+  homeScore: { type: Number, default: 0 },
+  awayScore: { type: Number, default: 0 },
+  startTime: Date,
+  endTime: Date,
+  elapsedTime: { type: Number, default: 0 }, // in minutes
+});
+
+const Match = mongoose.model("Match", MatchSchema);
+
+// Add Match
+app.post("/addmatch", async (req, res) => {
+  try {
+    const { id, homeTeam, awayTeam, date, time, venue, status, score } =
+      req.body;
+    const match = new Match({
+      id,
+      homeTeam,
+      awayTeam,
+      date,
+      time,
+      venue,
+      status,
+      score,
+    });
+    await match.save();
+    res.status(201).json({ success: true, match });
+  } catch (error) {
+    console.error("Error Adding Match", error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Delete Match
+app.delete("/matches/:id", async (req, res) => {
+  try {
+    const deletedMatch = await Match.findByIdAndDelete(req.params.id);
+    if (!deletedMatch) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Match not found" });
+    }
+    res.json({ success: true, message: "Match deleted", match: deletedMatch });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Update Match
+app.put("/updatematch/:id", async (req, res) => {
+  try {
+    const { score, status } = req.body;
+    const updatedMatch = await Match.findByIdAndUpdate(
+      req.params.id,
+      { score, status },
+      { new: true }
+    );
+    res.json({ success: true, match: updatedMatch });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+//Update Match Score
+app.put("/updatescore/:id", async (req, res) => {
+  try {
+    const { team, action } = req.body; // action: "increment" or "decrement"
+    const match = await Match.findById(req.params.id);
+
+    if (!match)
+      return res
+        .status(404)
+        .json({ success: false, message: "Match not found" });
+
+    if (team === "home") {
+      if (action === "increment") match.homeScore += 1;
+      if (action === "decrement" && match.homeScore > 0) match.homeScore -= 1;
+    } else if (team === "away") {
+      if (action === "increment") match.awayScore += 1;
+      if (action === "decrement" && match.awayScore > 0) match.awayScore -= 1;
+    }
+
+    await match.save();
+
+    io.emit("scoreUpdated", match)
+
+    res.json({ success: true, match });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+//Update Status
+app.put("/updatestatus/:id", async (req, res) => {
+  try {
+    const { status } = req.body;
+    const match = await Match.findById(req.params.id);
+
+    if (!match) {
+      return res.status(404).json({ success: false, error: "Match not found" });
+    }
+
+    let updateData = { status };
+
+    if (status === "live") {
+      // record start time when resuming or starting
+      updateData.startTime = new Date();
+    } else if (status === "paused" || status === "finished") {
+      if (match.startTime) {
+        const elapsed = Math.floor(
+          (Date.now() - match.startTime.getTime()) / 60000
+        );
+        updateData.elapsedTime = match.elapsedTime + elapsed;
+      }
+    }
+
+    const updatedMatch = await Match.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    );
+
+    res.json({ success: true, match: updatedMatch });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.put("/undostatus/:id", async (req, res) => {
+  try {
+    const { status, elapsedTime } = req.body;
+
+    const updatedMatch = await Match.findByIdAndUpdate(
+      req.params.id,
+      { status, elapsedTime },
+      { new: true }
+    );
+
+    res.json({ success: true, match: updatedMatch });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+
+
+
+// Start Match
+app.put("/matches/start/:id", async (req, res) => {
+  try {
+    const match = await Match.findByIdAndUpdate(
+      req.params.id,
+      { status: "live", startTime: new Date(), elapsedTime: 0 },
+      { new: true }
+    );
+    res.json({ success: true, match });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+
+// Finish Match
+ app.put("/matches/finish/:id", async (req, res) => {
+  try {
+    const match = await Match.findById(req.params.id);
+    if (!match) return res.status(404).json({ success: false, message: "Match not found" });
+
+    // calculate total elapsed time
+    const totalMinutes = match.elapsedTime + Math.floor((Date.now() - match.startTime.getTime()) / 60000);
+
+    match.status = "finished";
+    match.elapsedTime = totalMinutes;
+    await match.save();
+
+    res.json({ success: true, match });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 
 // Get All Matches
 app.get("/allmatches", async (req, res) => {

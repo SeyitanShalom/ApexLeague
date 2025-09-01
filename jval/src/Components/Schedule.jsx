@@ -1,9 +1,111 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import ScheduleForm from "./ScheduleForm";
+import axios from "axios";
 
 const Schedule = () => {
   const [showModal, setShowModal] = useState(false);
+  const [matches, setMatches] = useState([]);
+  const [timers, setTimers] = useState({}); // store timers per match
+
+  const fetchMatches = async () => {
+    try {
+      const res = await axios.get("http://localhost:4000/allmatches");
+      console.log(res.data);
+      setMatches(res.data.matches);
+    } catch (error) {
+      console.error("Error fetching matches:", error);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this match?")) return;
+    try {
+      await axios.delete(`http://localhost:4000/matches/${id}`);
+      setMatches((prev) => prev.filter((match) => match._id !== id));
+    } catch (error) {
+      console.error("Error deleting match:", error);
+    }
+  };
+
+  const startMatch = async (id) => {
+    try {
+      const res = await axios.put(`http://localhost:4000/matches/start/${id}`);
+      setMatches((prev) =>
+        prev.map((m) => (m._id === id ? res.data.match : m))
+      );
+    } catch (err) {
+      console.error("Error starting match:", err);
+    }
+  };
+
+  const finishMatch = async (id) => {
+    try {
+      const res = await axios.put(`http://localhost:4000/matches/finish/${id}`);
+      setMatches((prev) =>
+        prev.map((m) => (m._id === id ? res.data.match : m))
+      );
+    } catch (err) {
+      console.error("Error finishing match:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchMatches();
+  }, []);
+
+
+
+  const updateScore = async (id, team, action) => {
+    try {
+      const res = await axios.put(`http://localhost:4000/updatescore/${id}`, {
+        team,
+        action,
+      });
+      setMatches((prev) =>
+        prev.map((m) => (m._id === id ? res.data.match : m))
+      );
+    } catch (err) {
+      console.error("Error updating score:", err);
+    }
+  };
+
+  const updateStatus = async (id, status) => {
+    try {
+      const res = await axios.put(`http://localhost:4000/updatestatus/${id}`, {
+        status,
+      });
+      setMatches((prev) =>
+        prev.map((m) => (m._id === id ? res.data.match : m))
+      );
+    } catch (err) {
+      console.error("Error updating status:", err);
+    }
+  };
+
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimers((prev) => {
+        const updated = { ...prev };
+        matches.forEach((m) => {
+          if (m.status === "live" && m.startTime) {
+            const start = new Date(m.startTime).getTime();
+            const elapsed =
+              Math.floor((Date.now() - start) / 60000) + (m.elapsedTime || 0);
+            updated[m._id] = elapsed;
+          }
+        });
+        return updated;
+      });
+    }, 1000 * 60); // update every 1 minute
+
+    return () => clearInterval(interval);
+  }, [matches]);
+
+
+
+
   return (
     <div>
       <div className="bg-white rounded-lg my-5 p-5">
@@ -19,119 +121,99 @@ const Schedule = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg my-5 p-5 text-sm">
-        <div className="flex justify-between items-center border border-gray-200 rounded-md p-4">
-          <div>
-            <h2 className="font-bold text-gray-700">Team A VS Team B</h2>
-            <p className="text-gray-500 text-xs">03-10-2025 at 15:00</p>
-            <p className="text-gray-500 text-xs">Oyemekun Grammar School</p>
+      {matches.length === 0 ? (
+        <p className="text-gray-500 text-sm">No matches scheduled</p>
+      ) : (
+        matches.map((match) => (
+          <div key={match._id} className="bg-white rounded-lg my-5 p-5 text-sm">
+            <div className="border border-gray-200 rounded-md p-4 flex flex-col items-center">
+              <div className="flex justify-between items-center w-full ">
+                <div>
+                  <h2 className="font-bold text-gray-700">
+                    {match.homeTeam} VS {match.awayTeam}
+                  </h2>
+                  <p className="text-gray-500 text-xs">
+                    {match.date} at {match.time}
+                  </p>
+                  <p className="text-gray-500 text-xs">{match.venue}</p>
+                  <p className="text-gray-500 text-xs">
+                    Score: {match.homeScore} - {match.awayScore}
+                  </p>
+                </div>
+                <div>
+                  <RiDeleteBin6Line
+                    className="text-red-500 text-lg cursor-pointer"
+                    onClick={() => handleDelete(match._id)}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-evenly mt-2 gap-x-5">
+                {/* Home team score controls */}
+                <div className="flex flex-col items-center gap-3">
+                  <button
+                    className="bg-blue-500 w-40 text-white px-2 py-1 rounded"
+                    onClick={() => updateScore(match._id, "home", "increment")}
+                  >
+                    + Goal {match.homeTeam}
+                  </button>
+                  <button
+                    className="bg-gray-500 w-40 text-white px-2 py-1 rounded "
+                    onClick={() => updateScore(match._id, "home", "decrement")}
+                  >
+                    - Goal {match.homeTeam}
+                  </button>
+                </div>
+
+                {/* Away team score controls */}
+                <div className="flex flex-col items-center gap-3">
+                  <button
+                    className="bg-red-500 w-40 text-white px-2 py-1 rounded ml-2"
+                    onClick={() => updateScore(match._id, "away", "increment")}
+                  >
+                    + Goal {match.awayTeam}
+                  </button>
+                  <button
+                    className="bg-gray-500 w-40 text-white px-2 py-1 rounded ml-2"
+                    onClick={() => updateScore(match._id, "away", "decrement")}
+                  >
+                    - Goal {match.awayTeam}
+                  </button>
+                </div>
+              </div>
+              <div className="mt-3">
+                <div className="mt-3">
+                  <p className="text-gray-500 text-xs">
+                    {match.status === "live"
+                      ? `Time: ${timers[match._id] || 0}'`
+                      : match.status === "finished"
+                      ? `FT ${match.elapsedTime || 0}'`
+                      : "Not Started"}
+                  </p>
+
+                  <button
+                    className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
+                    onClick={() => updateStatus(match._id, "live")}
+                  >
+                    Start Match
+                  </button>
+
+                  <button
+                    className="bg-green-600 text-white px-2 py-1 rounded"
+                    onClick={() => updateStatus(match._id, "finished")}
+                  >
+                    Finish Match
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-          <div>
-            <RiDeleteBin6Line className="text-red-500 text-lg" />
-          </div>
-        </div>
-      </div>
+        ))
+      )}
+
       {/* Modal */}
-      {showModal  && <ScheduleForm/>}
-      {/* {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-10 flex items-center justify-center z-50 text-sm">
-          <div className="bg-white rounded-lg p-6 w-[350px] shadow-lg">
-            <h2 className="font-bold text-lg mb-4">Schedule New Match</h2>
-            <form>
-              <div className="mb-3">
-                <label className="block mb-1 text-sm">Home Team</label>
-                <select
-                  className="border px-2 py-1 w-full rounded outline-0"
-                  name=""
-                  id=""
-                >
-                  <option value="Team A">Team A</option>
-                  <option value="Team B">Team B</option>
-                  <option value="Team C">Team C</option>
-                  <option value="Team D">Team D</option>
-                  <option value="Team E">Team E</option>
-                  <option value="Team F">Team F</option>
-                  <option value="Team G">Team G</option>
-                  <option value="Team H">Team H</option>
-                  <option value="Team I">Team I</option>
-                  <option value="Team J">Team J</option>
-                  <option value="Team K">Team K</option>
-                  <option value="Team L">Team L</option>
-                  <option value="Team M">Team M</option>
-                  <option value="Team N">Team N</option>
-                  <option value="Team O">Team O</option>
-                  <option value="Team P">Team P</option>
-                </select>
-              </div>
-              <div className="mb-3">
-                <label className="block mb-1 text-sm">Away Team</label>
-                <select
-                  className="border px-2 py-1 w-full rounded outline-0"
-                  name=""
-                  id=""
-                >
-                  <option value="Team A">Team A</option>
-                  <option value="Team B">Team B</option>
-                  <option value="Team C">Team C</option>
-                  <option value="Team D">Team D</option>
-                  <option value="Team E">Team E</option>
-                  <option value="Team F">Team F</option>
-                  <option value="Team G">Team G</option>
-                  <option value="Team H">Team H</option>
-                  <option value="Team I">Team I</option>
-                  <option value="Team J">Team J</option>
-                  <option value="Team K">Team K</option>
-                  <option value="Team L">Team L</option>
-                  <option value="Team M">Team M</option>
-                  <option value="Team N">Team N</option>
-                  <option value="Team O">Team O</option>
-                  <option value="Team P">Team P</option>
-                </select>
-              </div>
-              <div className="mb-3">
-                <label className="block mb-1 text-sm">Date</label>
-                <input
-                  className="border px-2 py-1 w-full rounded outline-0"
-                  type="date"
-                  name=""
-                  id=""
-                />
-              </div>
-              <div className="mb-3">
-                <label className="block mb-1 text-sm">Time</label>
-                <input
-                  className="border px-2 py-1 w-full rounded outline-0"
-                  type="time"
-                  name=""
-                  id=""
-                />
-              </div>
-              <div className="mb-3">
-                <label className="block mb-1 text-sm">Venue</label>
-                <input
-                  className="border px-2 py-1 w-full rounded outline-0"
-                  type="text"
-                />
-              </div>
-              <div className="flex justify-evenly gap-2 mt-7">
-                <button
-                  type="button"
-                  className="bg-gray-300 w-32 py-2 rounded cursor-pointer"
-                  onClick={() => setShowModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="bg-green-600 text-white w-32 py-2 rounded cursor-pointer"
-                >
-                  Add
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )} */}
+      {showModal && (
+        <ScheduleForm setShowModal={setShowModal} onMatchAdded={fetchMatches} />
+      )}
     </div>
   );
 };
