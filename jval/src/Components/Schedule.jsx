@@ -7,6 +7,7 @@ const Schedule = () => {
   const [showModal, setShowModal] = useState(false);
   const [matches, setMatches] = useState([]);
   const [timers, setTimers] = useState({}); // store timers per match
+  const [additionalTime, setAdditionalTime] = useState(0);
 
   const fetchMatches = async () => {
     try {
@@ -50,11 +51,22 @@ const Schedule = () => {
     }
   };
 
+  const togglePause = async (id, paused) => {
+    try {
+      const res = await axios.put(`http://localhost:4000/matches/pause/${id}`, {
+        paused,
+      });
+      setMatches((prev) =>
+        prev.map((m) => (m._id === id ? res.data.match : m))
+      );
+    } catch (err) {
+      console.error("Error pausing/resuming match:", err);
+    }
+  };
+
   useEffect(() => {
     fetchMatches();
   }, []);
-
-
 
   const updateScore = async (id, team, action) => {
     try {
@@ -83,6 +95,12 @@ const Schedule = () => {
     }
   };
 
+  const handleAdditionalTime = async (id) => {
+    await axios.put(`http://localhost:4000/matches/additional-time/${id}`, {
+      additionalTime,
+    });
+    // Optionally refetch matches or update state
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -90,21 +108,21 @@ const Schedule = () => {
         const updated = { ...prev };
         matches.forEach((m) => {
           if (m.status === "live" && m.startTime) {
-            const start = new Date(m.startTime).getTime();
-            const elapsed =
-              Math.floor((Date.now() - start) / 60000) + (m.elapsedTime || 0);
-            updated[m._id] = elapsed;
+            let elapsedMs = m.elapsedTimeMs || 0;
+            if (!m.paused) {
+              elapsedMs += Date.now() - new Date(m.startTime).getTime();
+            }
+            const minutes = Math.floor(elapsedMs / 60000);
+            const seconds = Math.floor((elapsedMs % 60000) / 1000);
+            updated[m._id] = { minutes, seconds };
           }
         });
         return updated;
       });
-    }, 1000 * 60); // update every 1 minute
+    }, 1000); // update every second
 
     return () => clearInterval(interval);
   }, [matches]);
-
-
-
 
   return (
     <div>
@@ -184,7 +202,9 @@ const Schedule = () => {
                 <div className="mt-3">
                   <p className="text-gray-500 text-xs">
                     {match.status === "live"
-                      ? `Time: ${timers[match._id] || 0}'`
+                      ? `Time: ${timers[match._id]?.minutes || 0}' ${
+                          timers[match._id]?.seconds || 0
+                        }"${match.additionalTime > 0 && `+${match.additionalTime}'`}`
                       : match.status === "finished"
                       ? `FT ${match.elapsedTime || 0}'`
                       : "Not Started"}
@@ -196,12 +216,33 @@ const Schedule = () => {
                   >
                     Start Match
                   </button>
-
+                  <button
+                    className={`bg-purple-500 text-white px-2 py-1 rounded mr-2`}
+                    onClick={() => togglePause(match._id, !match.paused)}
+                  >
+                    {match.paused ? "Resume" : "Pause"}
+                  </button>
                   <button
                     className="bg-green-600 text-white px-2 py-1 rounded"
                     onClick={() => updateStatus(match._id, "finished")}
                   >
                     Finish Match
+                  </button>
+                </div>
+                <div className="mt-2">
+                  <input
+                    type="number"
+                    min={0}
+                    value={additionalTime}
+                    onChange={(e) => setAdditionalTime(Number(e.target.value))}
+                    className="border border-gray-300 rounded px-2 py-1 text-sm"
+                    placeholder="Additional Time (mins)"
+                  />
+                  <button
+                    onClick={() => handleAdditionalTime(match._id)}
+                    className="bg-blue-500 text-white px-2 py-1 rounded ml-2 text-sm"
+                  >
+                    Set Additional Time
                   </button>
                 </div>
               </div>

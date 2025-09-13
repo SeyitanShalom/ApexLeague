@@ -1,5 +1,6 @@
 "use client";
 import MatchEvents from "@/Components/MatchEvents";
+import Players from "@/Components/Players";
 import PlayerStats from "@/Components/PlayerStats";
 import Schedule from "@/Components/Schedule";
 import TabMenu from "@/Components/TabMenu";
@@ -8,10 +9,11 @@ import Teams from "@/Components/Teams";
 import React, { useState } from "react";
 
 const AdminPage = () => {
-  const [page, setPage] = useState("team lineups");
+  const [page, setPage] = useState("players");
   return (
     <div>
       <TabMenu page={page} setPage={setPage} />
+      {page === "players" && <Players />}
       {page === "teams" && <Teams />}
       {page === "team lineups" && <TeamLineups />}
       {page === "schedule" && <Schedule />}

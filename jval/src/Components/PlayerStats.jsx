@@ -1,13 +1,23 @@
+import { playerStats } from "@/data/stats";
 import React from "react";
 import { BiEditAlt } from "react-icons/bi";
+import PlayerStatsForm from "./PlayerStatsForm";
 
 const PlayerStats = () => {
+  const [showModal, setShowModal] = React.useState(false);
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+  };
   return (
     <div>
       <div className="bg-white rounded-lg my-5 p-5">
         <div className="flex justify-between items-center">
           <p className="font-bold">Player Statistics</p>
-          <button className="bg-green-600 text-white px-3 py-1 font-bold text-xs cursor-pointer rounded-md">
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-green-600 text-white px-3 py-1 font-bold text-xs cursor-pointer rounded-md"
+          >
             <span className="text-base mr-2">+</span>Add Player Stats
           </button>
         </div>
@@ -87,6 +97,14 @@ const PlayerStats = () => {
           <BiEditAlt className="text-green-500 text-lg" />
         </div>
       </div>
+      {showModal && (
+        <div>
+          <PlayerStatsForm
+            onSubmit={handleFormSubmit}
+            setShowModal={setShowModal}
+          />
+        </div>
+      )}
     </div>
   );
 };

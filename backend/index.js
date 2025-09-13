@@ -152,7 +152,10 @@ const MatchSchema = mongoose.Schema({
   awayScore: { type: Number, default: 0 },
   startTime: Date,
   endTime: Date,
+  paused: { type: Boolean, default: false },
+  additionalTime: { type: Number, default: 0 }, // in minutes
   elapsedTime: { type: Number, default: 0 }, // in minutes
+  elapsedTimeMs: { type: Number, default: 0 }, // in milliseconds
 });
 
 const Match = mongoose.model("Match", MatchSchema);
@@ -231,7 +234,7 @@ app.put("/updatescore/:id", async (req, res) => {
 
     await match.save();
 
-    io.emit("scoreUpdated", match)
+    io.emit("scoreUpdated", match);
 
     res.json({ success: true, match });
   } catch (error) {
@@ -291,9 +294,6 @@ app.put("/undostatus/:id", async (req, res) => {
   }
 });
 
-
-
-
 // Start Match
 app.put("/matches/start/:id", async (req, res) => {
   try {
@@ -308,15 +308,62 @@ app.put("/matches/start/:id", async (req, res) => {
   }
 });
 
-
-// Finish Match
- app.put("/matches/finish/:id", async (req, res) => {
+//Pause/Resume Match
+app.put("/matches/pause/:id", async (req, res) => {
   try {
     const match = await Match.findById(req.params.id);
-    if (!match) return res.status(404).json({ success: false, message: "Match not found" });
+    if (req.body.paused) {
+      // Pause: accumulate elapsed time and clear startTime
+      if (!match.paused && match.startTime) {
+        const now = Date.now();
+        const elapsed = now - new Date(match.startTime).getTime();
+        match.elapsedTimeMs = (match.elapsedTimeMs || 0) + elapsed;
+        match.paused = true;
+        match.startTime = null;
+        await match.save();
+      }
+    } else {
+      // Resume: set new startTime and keep elapsedTimeMs
+      if (match.paused) {
+        match.startTime = Date.now();
+        match.paused = false;
+        await match.save();
+      }
+    }
+    res.json({ success: true, match });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Update Additional Time
+app.put("/matches/additional-time/:id", async (req, res) => {
+  try {
+    const { additionalTime } = req.body;
+    const match = await Match.findByIdAndUpdate(
+      req.params.id,
+      { additionalTime },
+      { new: true }
+    );
+    res.json({ success: true, match });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Finish Match
+app.put("/matches/finish/:id", async (req, res) => {
+  try {
+    const match = await Match.findById(req.params.id);
+    if (!match)
+      return res
+        .status(404)
+        .json({ success: false, message: "Match not found" });
 
     // calculate total elapsed time
-    const totalMinutes = match.elapsedTime + Math.floor((Date.now() - match.startTime.getTime()) / 60000);
+    const totalMinutes =
+      match.elapsedTime +
+      Math.floor((Date.now() - match.startTime.getTime()) / 60000);
 
     match.status = "finished";
     match.elapsedTime = totalMinutes;
@@ -327,7 +374,6 @@ app.put("/matches/start/:id", async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
-
 
 // Get All Matches
 app.get("/allmatches", async (req, res) => {
@@ -343,12 +389,12 @@ app.get("/allmatches", async (req, res) => {
 // Person Schema (Unified Player/Coach/Manager)
 const PersonSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
     role: {
       type: String,
       required: true,
       enum: ["player", "coach", "manager"],
     },
+    name: { type: String, required: true },
     nationality: { type: String },
     position: { type: String },
     jerseyNumber: { type: Number },
@@ -356,8 +402,8 @@ const PersonSchema = new mongoose.Schema(
     team: { type: String },
     coachingRole: { type: String },
     experience: { type: Number },
-    club: { type: String },
     contact: { type: String },
+    image: {type: String},
   },
   { timestamps: true }
 );
@@ -397,6 +443,71 @@ app.get("/people/:role", async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+//Player Stats Schema
+const StatsSchema = mongoose.Schema({
+  playerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Person",
+    required: true,
+  },
+  playerName: { type: String, required: true },
+  position: { type: String, required: true },
+  team: { type: String, required: true },
+  matches: { type: Number, default: 0 },
+  goals: { type: Number, default: 0 },
+  assists: { type: Number, default: 0 },
+  cleansheets: { type: Number, default: 0 },
+  yellowCards: { type: Number, default: 0 },
+  redCards: { type: Number, default: 0 },
+});
+
+const Stats = mongoose.model("Stats", StatsSchema);
+
+//Create Player Stats
+app.post("/addplayerstats", async (req, res) => {
+  try {
+    // Find the player by name or by a playerId sent from the frontend
+    const player = await Person.findOne({ name: req.body.playerName });
+    if (!player) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Player not found" });
+    }
+    const stats = new Stats({
+      playerId: player._id,
+      playerName: player.name,
+      position: player.position,
+      team: player.team,
+      matches: req.body.matches,
+      goals: req.body.goals,
+      assists: req.body.assists,
+      cleansheets: req.body.cleansheets,
+      yellowCards: req.body.yellowCards,
+      redCards: req.body.redCards,
+    });
+    await stats.save();
+    res.status(201).json({
+      success: true,
+      message: "Player stats added successfully",
+      stats,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Get All Player Stats
+app.get("/allplayerstats", async (req, res) => {
+  try {
+    const allStats = await Stats.find({});
+    console.log("All Player Stats Fetched");
+    res.status(200).json({ success: true, allStats });
+  } catch (error) {
+    console.error("Error fetching all player stats", error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+}); 
 
 // LineUp Schema (referencing Person)
 const LineUpSchema = new mongoose.Schema(
