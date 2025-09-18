@@ -1,19 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 const initialStats = {
-  playerName: "",
-  team: "",
+  playerId: "",
   matches: "",
   goals: "",
   assists: "",
   cleansheets: "",
-  yellows: "",
-  reds: "",
+  yellowCards: "",
+  redCards: "",
 };
 
-const PlayerStatsForm = ({ onSubmit, setShowModal }) => {
-  const [stats, setStats] = useState(initialStats);
+const PlayerStatsForm = ({ setShowModal, players, editingStat, onUpdate }) => {
+  const [stats, setStats] = useState(editingStat || initialStats);
+
+  useEffect(() => {
+    if (editingStat) setStats(editingStat);
+  }, [editingStat]);
 
   const handleChange = (e) => {
     setStats({ ...stats, [e.target.name]: e.target.value });
@@ -22,11 +25,14 @@ const PlayerStatsForm = ({ onSubmit, setShowModal }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("http://localhost:4000/addplayerstats", stats);
-      alert("Player Stats Added!");
-      onSubmit(stats);
+      if (editingStat) {
+        await onUpdate(stats);
+      } else {
+        await axios.post("http://localhost:4000/addplayerstats", stats);
+        alert("Player Stats Added!");
+      }
       setStats(initialStats);
-      if (setShowModal) setShowModal(false);
+      setShowModal(false);
     } catch (error) {
       alert("Error: " + error.message);
     }
@@ -41,26 +47,23 @@ const PlayerStatsForm = ({ onSubmit, setShowModal }) => {
           className="space-y-4 bg-white p-5 rounded-lg"
         >
           <div>
-            <label>Player Name</label>
-            <input
-              type="text"
-              name="playerName"
-              value={stats.playerName}
+            <label>Player</label>
+            <select
+              name="playerId"
+              value={stats.playerId}
               onChange={handleChange}
               required
               className="border px-2 py-1 rounded w-full"
-            />
-          </div>
-          <div>
-            <label>Team</label>
-            <input
-              type="text"
-              name="team"
-              value={stats.team}
-              onChange={handleChange}
-              required
-              className="border px-2 py-1 rounded w-full"
-            />
+            >
+              <option value="">Select Player</option>
+              {players
+                .filter((p) => p.role === "player")
+                .map((p) => (
+                  <option key={p._id} value={p._id}>
+                    {p.name}
+                  </option>
+                ))}
+            </select>
           </div>
           <div>
             <label>Matches</label>
@@ -110,8 +113,8 @@ const PlayerStatsForm = ({ onSubmit, setShowModal }) => {
             <label>Yellow Cards</label>
             <input
               type="number"
-              name="yellows"
-              value={stats.yellows}
+              name="yellowCards"
+              value={stats.yellowCards}
               onChange={handleChange}
               required
               className="border px-2 py-1 rounded w-full"
@@ -121,8 +124,8 @@ const PlayerStatsForm = ({ onSubmit, setShowModal }) => {
             <label>Red Cards</label>
             <input
               type="number"
-              name="reds"
-              value={stats.reds}
+              name="redCards"
+              value={stats.redCards}
               onChange={handleChange}
               required
               className="border px-2 py-1 rounded w-full"

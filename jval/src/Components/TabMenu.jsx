@@ -16,7 +16,7 @@ const TabMenu = ({ page, setPage }) => {
       <select
         value={page}
         onChange={(e) => setPage(e.target.value)}
-        className="border border-1 border-gray-500 rounded px-3 py-2 text-sm w-md outline-none"
+        className="border-2 border-gray-500 rounded px-3 py-2 text-sm w-md outline-none"
       >
         {tabOptions.map((option) => (
           <option key={option.value} value={option.value}>

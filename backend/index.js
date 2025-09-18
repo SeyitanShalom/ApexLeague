@@ -9,6 +9,7 @@ const path = require("path");
 const cors = require("cors");
 const { Server } = require("socket.io");
 const http = require("http");
+const { log } = require("console");
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -403,7 +404,7 @@ const PersonSchema = new mongoose.Schema(
     coachingRole: { type: String },
     experience: { type: Number },
     contact: { type: String },
-    image: {type: String},
+    image: { type: String },
   },
   { timestamps: true }
 );
@@ -411,7 +412,7 @@ const PersonSchema = new mongoose.Schema(
 const Person = mongoose.model("Person", PersonSchema);
 
 // Create Person
-app.post("/people", async (req, res) => {
+app.post("/person", async (req, res) => {
   try {
     const person = new Person(req.body);
     await person.save();
@@ -468,7 +469,7 @@ const Stats = mongoose.model("Stats", StatsSchema);
 app.post("/addplayerstats", async (req, res) => {
   try {
     // Find the player by name or by a playerId sent from the frontend
-    const player = await Person.findOne({ name: req.body.playerName });
+    const player = await Person.findById(req.body.playerId);
     if (!player) {
       return res
         .status(404)
@@ -497,6 +498,18 @@ app.post("/addplayerstats", async (req, res) => {
   }
 });
 
+//Update Player Stats
+app.put("/updatestats/:id", async (req, res) => {
+  try {
+    const updated = await Stats.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
+    res.json({ success: true, updated });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Get All Player Stats
 app.get("/allplayerstats", async (req, res) => {
   try {
@@ -507,7 +520,24 @@ app.get("/allplayerstats", async (req, res) => {
     console.error("Error fetching all player stats", error.message);
     res.status(500).json({ success: false, error: error.message });
   }
-}); 
+});
+
+//Delete Player Stats
+app.delete("/deletestats/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedStat = await Stats.findByIdAndDelete(id);
+    if (!deletedStat) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Stats not found" });
+    }
+    log("Stats deleted:", deletedStat.playerName);
+    res.json({ success: true, message: "Stats deleted" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // LineUp Schema (referencing Person)
 const LineUpSchema = new mongoose.Schema(

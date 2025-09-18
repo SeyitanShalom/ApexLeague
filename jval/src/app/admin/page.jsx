@@ -1,6 +1,6 @@
 "use client";
 import MatchEvents from "@/Components/MatchEvents";
-import Players from "@/Components/Players";
+import Players from "@/Components/People";
 import PlayerStats from "@/Components/PlayerStats";
 import Schedule from "@/Components/Schedule";
 import TabMenu from "@/Components/TabMenu";

@@ -1,3 +1,4 @@
+import axios from "axios";
 import React, { useState } from "react";
 
 const initialPerson = {
@@ -16,15 +17,44 @@ const initialPerson = {
 
 const PersonForm = ({ onSubmit, setShowModal }) => {
   const [person, setPerson] = useState(initialPerson);
+  const [file, setFile] = useState(null);
+  const [imageUrl, setImageUrl] = useState("");
 
   const handleChange = (e) => {
     setPerson({ ...person, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(person);
-    setPerson(initialPerson);
+    try {
+      let imageUrl = "";
+
+      // 1️⃣ Upload image if file is selected
+      if (file) {
+        const formData = new FormData();
+        formData.append("image", file);
+
+        const uploadRes = await axios.post(
+          "http://localhost:4000/upload",
+          formData,
+          { headers: { "Content-Type": "multipart/form-data" } }
+        );
+        imageUrl = uploadRes.data.imageurl;
+        setImageUrl(imageUrl); // <-- set for preview
+      }
+      const newPerson = { ...person, image: imageUrl };
+      await axios.post("http://localhost:4000/person", newPerson);
+      alert("Person added successfully!");
+      setPerson(initialPerson);
+      setShowModal(false);
+    } catch (error) {
+      alert(`Error: ${error.message}`);
+    }
+    onSubmit();
   };
 
   return (
@@ -68,6 +98,7 @@ const PersonForm = ({ onSubmit, setShowModal }) => {
               name="nationality"
               value={person.nationality}
               onChange={handleChange}
+              required
               className="border px-2 py-1 rounded w-full"
             />
           </div>
@@ -78,6 +109,7 @@ const PersonForm = ({ onSubmit, setShowModal }) => {
               name="team"
               value={person.team}
               onChange={handleChange}
+              required
               className="border px-2 py-1 rounded w-full"
             />
           </div>
@@ -90,6 +122,7 @@ const PersonForm = ({ onSubmit, setShowModal }) => {
                   name="position"
                   value={person.position}
                   onChange={handleChange}
+                  required
                   className="border px-2 py-1 rounded w-full"
                 />
               </div>
@@ -100,6 +133,7 @@ const PersonForm = ({ onSubmit, setShowModal }) => {
                   name="jerseyNumber"
                   value={person.jerseyNumber}
                   onChange={handleChange}
+                  required
                   className="border px-2 py-1 rounded w-full"
                 />
               </div>
@@ -111,6 +145,7 @@ const PersonForm = ({ onSubmit, setShowModal }) => {
                   name="age"
                   value={person.age}
                   onChange={handleChange}
+                  required
                   className="border px-2 py-1 rounded w-full"
                 />
               </div>
@@ -125,6 +160,7 @@ const PersonForm = ({ onSubmit, setShowModal }) => {
                   name="coachingRole"
                   value={person.coachingRole}
                   onChange={handleChange}
+                  required
                   className="border px-2 py-1 rounded w-full"
                 />
               </div>
@@ -177,12 +213,13 @@ const PersonForm = ({ onSubmit, setShowModal }) => {
             />
           </div>
           <div>
-            <label>Image URL</label>
+            <label>Image</label>
             <input
-              type="text"
+              type="file"
+              accept="image/*"
               name="image"
-              value={person.image}
-              onChange={handleChange}
+              onChange={handleFileChange}
+              required
               className="border px-2 py-1 rounded w-full"
             />
           </div>
