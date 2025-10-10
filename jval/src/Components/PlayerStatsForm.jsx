@@ -13,10 +13,13 @@ const initialStats = {
 
 const PlayerStatsForm = ({ setShowModal, players, editingStat, onUpdate }) => {
   const [stats, setStats] = useState(editingStat || initialStats);
+  const [teams, setTeams] = useState([]);
 
   useEffect(() => {
     if (editingStat) setStats(editingStat);
   }, [editingStat]);
+
+ 
 
   const handleChange = (e) => {
     setStats({ ...stats, [e.target.name]: e.target.value });

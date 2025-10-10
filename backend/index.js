@@ -145,8 +145,7 @@ const MatchSchema = mongoose.Schema({
   venue: { type: String, required: true },
   status: {
     type: String,
-    enum: ["live", "finished", "upcoming"],
-    required: true,
+    enum: ["live", "finished", "upcoming", "paused", "halftime"],
     default: "upcoming",
   },
   homeScore: { type: Number, default: 0 },
@@ -154,9 +153,14 @@ const MatchSchema = mongoose.Schema({
   startTime: Date,
   endTime: Date,
   paused: { type: Boolean, default: false },
-  additionalTime: { type: Number, default: 0 }, // in minutes
-  elapsedTime: { type: Number, default: 0 }, // in minutes
-  elapsedTimeMs: { type: Number, default: 0 }, // in milliseconds
+  additionalTime: { type: Number, default: 0 },
+  elapsedTime: { type: Number, default: 0 },
+  elapsedTimeMs: { type: Number, default: 0 },
+  half: {
+    type: Number,
+    enum: [1, 2],
+    default: 1,
+  },
 });
 
 const Match = mongoose.model("Match", MatchSchema);
@@ -164,17 +168,19 @@ const Match = mongoose.model("Match", MatchSchema);
 // Add Match
 app.post("/addmatch", async (req, res) => {
   try {
-    const { id, homeTeam, awayTeam, date, time, venue, status, score } =
-      req.body;
+    const { homeTeam, awayTeam, date, time, venue } = req.body;
     const match = new Match({
-      id,
       homeTeam,
       awayTeam,
       date,
       time,
       venue,
-      status,
-      score,
+      status: "upcoming",
+      homeScore: 0,
+      awayScore: 0,
+      elapsedTimeMs: 0,
+      additionalTime: 0,
+      paused: false,
     });
     await match.save();
     res.status(201).json({ success: true, match });
@@ -184,7 +190,6 @@ app.post("/addmatch", async (req, res) => {
   }
 });
 
-// Delete Match
 app.delete("/matches/:id", async (req, res) => {
   try {
     const deletedMatch = await Match.findByIdAndDelete(req.params.id);
@@ -199,27 +204,30 @@ app.delete("/matches/:id", async (req, res) => {
   }
 });
 
-// Update Match
 app.put("/updatematch/:id", async (req, res) => {
   try {
-    const { score, status } = req.body;
+    const { homeScore, awayScore, status } = req.body;
     const updatedMatch = await Match.findByIdAndUpdate(
       req.params.id,
-      { score, status },
+      { homeScore, awayScore, status },
       { new: true }
     );
+    if (!updatedMatch) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Match not found" });
+    }
     res.json({ success: true, match: updatedMatch });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-//Update Match Score
+// ✅ Increment or decrement score
 app.put("/updatescore/:id", async (req, res) => {
   try {
-    const { team, action } = req.body; // action: "increment" or "decrement"
+    const { team, action } = req.body;
     const match = await Match.findById(req.params.id);
-
     if (!match)
       return res
         .status(404)
@@ -234,125 +242,122 @@ app.put("/updatescore/:id", async (req, res) => {
     }
 
     await match.save();
-
     io.emit("scoreUpdated", match);
-
     res.json({ success: true, match });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-//Update Status
-app.put("/updatestatus/:id", async (req, res) => {
-  try {
-    const { status } = req.body;
-    const match = await Match.findById(req.params.id);
-
-    if (!match) {
-      return res.status(404).json({ success: false, error: "Match not found" });
-    }
-
-    let updateData = { status };
-
-    if (status === "live") {
-      // record start time when resuming or starting
-      updateData.startTime = new Date();
-    } else if (status === "paused" || status === "finished") {
-      if (match.startTime) {
-        const elapsed = Math.floor(
-          (Date.now() - match.startTime.getTime()) / 60000
-        );
-        updateData.elapsedTime = match.elapsedTime + elapsed;
-      }
-    }
-
-    const updatedMatch = await Match.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true }
-    );
-
-    res.json({ success: true, match: updatedMatch });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.put("/undostatus/:id", async (req, res) => {
-  try {
-    const { status, elapsedTime } = req.body;
-
-    const updatedMatch = await Match.findByIdAndUpdate(
-      req.params.id,
-      { status, elapsedTime },
-      { new: true }
-    );
-
-    res.json({ success: true, match: updatedMatch });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// Start Match
+// ✅ Start Match
 app.put("/matches/start/:id", async (req, res) => {
   try {
-    const match = await Match.findByIdAndUpdate(
-      req.params.id,
-      { status: "live", startTime: new Date(), elapsedTime: 0 },
-      { new: true }
-    );
+    const match = await Match.findById(req.params.id);
+    if (!match)
+      return res
+        .status(404)
+        .json({ success: false, message: "Match not found" });
+
+    match.status = "live";
+    match.startTime = new Date();
+    match.elapsedTimeMs = match.elapsedTimeMs || 0;
+    match.paused = false;
+
+    await match.save();
+    io.emit("matchUpdated", match);
     res.json({ success: true, match });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-//Pause/Resume Match
+// ✅ Pause or Resume Match
 app.put("/matches/pause/:id", async (req, res) => {
   try {
     const match = await Match.findById(req.params.id);
-    if (req.body.paused) {
-      // Pause: accumulate elapsed time and clear startTime
+    if (!match) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Match not found" });
+    }
+
+    const { paused } = req.body;
+
+    if (paused) {
+      // ✅ PAUSE match
       if (!match.paused && match.startTime) {
         const now = Date.now();
         const elapsed = now - new Date(match.startTime).getTime();
-        match.elapsedTimeMs = (match.elapsedTimeMs || 0) + elapsed;
+        match.elapsedTimeMs += elapsed;
         match.paused = true;
         match.startTime = null;
-        await match.save();
+        match.status = "paused";
       }
     } else {
-      // Resume: set new startTime and keep elapsedTimeMs
+      // ✅ RESUME match
       if (match.paused) {
-        match.startTime = Date.now();
+        const totalMins = Math.floor(match.elapsedTimeMs / 60000);
+
+        // 🕒 Transition to 2nd Half Logic
+        if (match.half === 1 && totalMins >= 45 + match.additionalTime) {
+          match.half = 2;
+          match.additionalTime = 0;
+          // Reset timer to start at 45:00 exactly (2nd half begins)
+          match.elapsedTimeMs = 45 * 60 * 1000;
+        }
+
         match.paused = false;
-        await match.save();
+        match.startTime = new Date();
+        match.status = "live";
       }
     }
+
+    await match.save();
+    io.emit("matchUpdated", match);
     res.json({ success: true, match });
   } catch (error) {
+    console.error("Error in pause/resume:", error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Update Additional Time
+// ✅ Add Additional Time (auto-adjusts to correct half)
 app.put("/matches/additional-time/:id", async (req, res) => {
   try {
-    const { additionalTime } = req.body;
-    const match = await Match.findByIdAndUpdate(
-      req.params.id,
-      { additionalTime },
-      { new: true }
-    );
-    res.json({ success: true, match });
+    const match = await Match.findById(req.params.id);
+    if (!match) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Match not found" });
+    }
+
+    const { minutes } = req.body;
+
+    if (typeof minutes !== "number" || minutes < 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid additional time value" });
+    }
+
+    match.additionalTime = minutes;
+
+    await match.save();
+    io.emit("matchUpdated", match);
+
+    res.json({
+      success: true,
+      message: `Added ${minutes} mins additional time to ${
+        match.half === 1 ? "1st" : "2nd"
+      } half`,
+      match,
+    });
   } catch (error) {
+    console.error("Error adding additional time:", error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Finish Match
+// ✅ Finish Match
 app.put("/matches/finish/:id", async (req, res) => {
   try {
     const match = await Match.findById(req.params.id);
@@ -361,26 +366,30 @@ app.put("/matches/finish/:id", async (req, res) => {
         .status(404)
         .json({ success: false, message: "Match not found" });
 
-    // calculate total elapsed time
-    const totalMinutes =
-      match.elapsedTime +
-      Math.floor((Date.now() - match.startTime.getTime()) / 60000);
+    let activeDuration = 0;
+    if (match.startTime) {
+      activeDuration = Date.now() - new Date(match.startTime).getTime();
+    }
 
+    match.elapsedTimeMs = (match.elapsedTimeMs || 0) + activeDuration;
     match.status = "finished";
-    match.elapsedTime = totalMinutes;
+    match.paused = false;
+    match.startTime = null;
+
     await match.save();
 
+    io.emit("matchUpdated", match);
     res.json({ success: true, match });
   } catch (error) {
+    console.error("Finish Match Error:", error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Get All Matches
+// ✅ Get All Matches
 app.get("/allmatches", async (req, res) => {
   try {
     const matches = await Match.find({});
-    console.log("All matches fetched");
     res.status(200).json({ success: true, matches });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -547,17 +556,10 @@ const LineUpSchema = new mongoose.Schema(
       ref: "Match",
       required: true,
     },
-    players: [
-      {
-        person: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Person",
-          required: true,
-        },
-        position: { type: String },
-        jerseyNumber: { type: Number },
-      },
-    ],
+    team: { type: String, required: true },
+    formation: { type: String, required: true },
+    startingXI: [{ type: mongoose.Schema.Types.ObjectId, ref: "Person" }],
+    substitutes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Person" }],
     coach: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Person",

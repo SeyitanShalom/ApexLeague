@@ -1,20 +1,24 @@
-import React, { useState } from "react";
-import { matches } from "@/data/matches";
-import { matchEvents } from "@/data/matchEvents";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { FaFutbol, FaArrowRightArrowLeft } from "react-icons/fa6";
 import { IoMdCard } from "react-icons/io";
+import { RiDeleteBin6Line } from "react-icons/ri";
 import EventForm from "./EventForm";
 
 const getEventIcon = (type) => {
   switch (type) {
     case "goal":
       return <FaFutbol className="text-green-600" />;
-    case "yellow":
+    case "yellow_card":
       return <IoMdCard className="text-yellow-500" />;
-    case "red":
+    case "red_card":
       return <IoMdCard className="text-red-600" />;
-    case "sub":
+    case "substitution":
       return <FaArrowRightArrowLeft className="text-blue-500" />;
+    case "penalty":
+      return <FaFutbol className="text-purple-600" />;
+    case "own_goal":
+      return <FaFutbol className="text-orange-600" />;
     default:
       return null;
   }
@@ -24,12 +28,16 @@ const getEventBackground = (type) => {
   switch (type) {
     case "goal":
       return "bg-green-50";
-    case "yellow":
+    case "yellow_card":
       return "bg-yellow-50";
-    case "red":
+    case "red_card":
       return "bg-red-50";
-    case "sub":
+    case "substitution":
       return "bg-blue-50";
+    case "penalty":
+      return "bg-purple-50";
+    case "own_goal":
+      return "bg-orange-50";
     default:
       return "bg-gray-50";
   }
@@ -39,27 +47,60 @@ const getMatchName = (match) =>
   match ? `${match.homeTeam} VS ${match.awayTeam}` : "No Match Selected";
 
 const MatchEvents = () => {
-  // Ensure matches is not empty
-  const [selectedMatchId, setSelectedMatchId] = useState(
-    matches.length > 0 ? String(matches[0]._id) : ""
-  );
+  const [matches, setMatches] = useState([]);
+  const [selectedMatchId, setSelectedMatchId] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [eventsForMatch, setEventsForMatch] = useState([]);
 
-  const selectedMatch = matches.find((m) => m._id === selectedMatchId);
-  const matchEventObj = matchEvents.find(
-    (me) => me.matchId === selectedMatchId
+  // Fetch matches on mount
+  useEffect(() => {
+    axios.get("http://localhost:4000/allmatches").then((res) => {
+      setMatches(res.data.matches || []);
+      if (res.data.matches && res.data.matches.length > 0) {
+        setSelectedMatchId(String(res.data.matches[0]._id));
+      }
+    });
+  }, []);
+
+  // Fetch events when selectedMatchId or showModal changes
+  useEffect(() => {
+    if (selectedMatchId) {
+      axios
+        .get(`http://localhost:4000/matchevents/${selectedMatchId}`)
+        .then((res) => setEventsForMatch(res.data.events || []))
+        .catch(() => setEventsForMatch([]));
+    }
+  }, [selectedMatchId, showModal]);
+
+  const handleDeleteEvent = async (
+    minute,
+    description,
+    player,
+    subIn,
+    subOut
+  ) => {
+    // Filter out the event to delete by matching unique fields
+    const updatedEvents = eventsForMatch.filter(
+      (event) =>
+        !(
+          event.minute === minute &&
+          event.description === description &&
+          event.player === player &&
+          event.subIn === subIn &&
+          event.subOut === subOut
+        )
+    );
+    // Update events in backend
+    await axios.post("http://localhost:4000/creatematchevent", {
+      matchId: selectedMatchId,
+      events: updatedEvents,
+    });
+    setEventsForMatch(updatedEvents);
+  };
+
+  const selectedMatch = matches.find(
+    (m) => String(m._id) === String(selectedMatchId)
   );
-  const eventsForMatch = matchEventObj ? matchEventObj.events : [];
-
-  console.log("selectedMatchId:", selectedMatchId);
-  console.log(
-    "matches ids:",
-    matches.map((m) => m._id)
-  );
-  console.log("selectedMatch:", selectedMatch);
-console.log(typeof matches[0]._id, matches[0]._id);
-console.log(typeof selectedMatchId, selectedMatchId);
-
 
   return (
     <div>
@@ -83,8 +124,8 @@ console.log(typeof selectedMatchId, selectedMatchId);
               value={selectedMatchId}
               onChange={(e) => setSelectedMatchId(e.target.value)}
             >
-              {matches.map((m, idx) => (
-                <option key={idx} value={m._id}>
+              {matches.map((m) => (
+                <option key={m._id} value={m._id}>
                   {getMatchName(m)}
                 </option>
               ))}
@@ -114,30 +155,49 @@ console.log(typeof selectedMatchId, selectedMatchId);
         <p className="text-sm font-semibold mb-3">Match Timeline</p>
         <div>
           {eventsForMatch.length > 0 ? (
-            eventsForMatch.map((event) => {
-              // Generate unique key from event data
-              const eventKey = `${event.minute}-${event.type}-${
-                event.player || event.scorer || Math.random()
+            eventsForMatch.map((event, idx) => {
+              const eventKey = `${event.minute}-${event.description}-${
+                event.player || Math.random()
               }`;
               return (
                 <div
                   key={eventKey}
-                  className={`mb-4 flex items-center gap-2 text-sm p-3 rounded-md ${getEventBackground(
-                    event.type
+                  className={`mb-4 flex items-center justify-between gap-2 text-sm p-3 rounded-md ${getEventBackground(
+                    event.description
                   )}`}
                 >
-                  {getEventIcon(event.type)}
-                  <div>
-                    <p className="font-medium">
-                      {event.minute}' -{" "}
-                      {event.scorer && <span>{event.scorer}</span>}
-                      {event.assist && <span> ({event.assist})</span>}
-                      {event.player && <span> {event.player}</span>}
-                      {event.subIn && <span> In: {event.subIn} --</span>}{" "}
-                      {event.subOut && <span> Out: {event.subOut}</span>}
-                    </p>
-                    <span className="text-gray-600">{event.team}</span>
+                  <div className="flex items-center gap-3">
+                    {getEventIcon(event.description)}
+                    <div>
+                      <p className="font-medium">
+                        {event.minute}' -{" "}
+                        {event.description !== "substitution" &&
+                          event.player && <span>{event.player}</span>}
+                        {event.assist && <span> (Assist: {event.assist})</span>}
+                        {event.description === "substitution" && (
+                          <>
+                            {event.subIn && <span>In: {event.subIn} -- </span>}
+                            {event.subOut && <span>Out: {event.subOut}</span>}
+                          </>
+                        )}
+                      </p>
+                      <span className="text-gray-600">{event.team}</span>
+                    </div>
                   </div>
+                  <button
+                    className="ml-2 text-xl text-red-500 hover:text-red-700"
+                    onClick={() =>
+                      handleDeleteEvent(
+                        event.minute,
+                        event.description,
+                        event.player,
+                        event.subIn,
+                        event.subOut
+                      )
+                    }
+                  >
+                    <RiDeleteBin6Line />
+                  </button>
                 </div>
               );
             })
@@ -151,13 +211,11 @@ console.log(typeof selectedMatchId, selectedMatchId);
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
           <div className="bg-white p-5 rounded-lg shadow-lg w-96">
-            <EventForm matchId={selectedMatchId} setShowModal={setShowModal} />
-            <button
-              onClick={() => setShowModal(false)}
-              className="mt-3 bg-red-500 text-white px-4 py-1 rounded-md text-sm"
-            >
-              Close
-            </button>
+            <EventForm
+              matchId={selectedMatchId}
+              selectedMatch={selectedMatch}
+              setShowModal={setShowModal}
+            />
           </div>
         </div>
       )}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 const initialMatch = {
@@ -11,8 +11,30 @@ const initialMatch = {
   score: "",
 };
 
-const MatchScheduleForm = ({ onMatchAdded, setShowModal }) => {
+function getDisplayTime(match) {
+  let elapsed = match.elapsedTimeMs || 0;
+  if (match.status === "live" && !match.paused && match.startTime) {
+    elapsed += Date.now() - new Date(match.startTime).getTime();
+  }
+  // Convert ms to mm:ss
+  const totalSeconds = Math.floor(elapsed / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+const ScheduleForm = ({ onMatchAdded, setShowModal }) => {
   const [match, setMatch] = useState(initialMatch);
+  const [teams, setTeams] = useState([]);
+
+  useEffect(() => {
+    axios.get("http://localhost:4000/allteams").then((res) => {
+      const sortedTeams = (res.data.teams || []).sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
+      setTeams(sortedTeams);
+    });
+  }, []);
 
   const handleChange = (e) => {
     setMatch({ ...match, [e.target.name]: e.target.value });
@@ -29,7 +51,18 @@ const MatchScheduleForm = ({ onMatchAdded, setShowModal }) => {
     } catch (err) {
       alert("Error: " + err.message);
     }
+  };
 
+  const handlePauseResume = async (pause) => {
+    try {
+      await axios.post("http://localhost:4000/updateMatch", {
+        ...match,
+        paused: pause,
+      });
+      setMatch({ ...match, paused: pause });
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
   };
 
   return (
@@ -39,25 +72,37 @@ const MatchScheduleForm = ({ onMatchAdded, setShowModal }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label>Home Team</label>
-            <input
-              type="text"
+            <select
               name="homeTeam"
               value={match.homeTeam}
               onChange={handleChange}
               required
               className="border px-2 py-1 rounded w-full"
-            />
+            >
+              <option value="">Select Home Team</option>
+              {teams.map((team) => (
+                <option key={team._id} value={team.name}>
+                  {team.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label>Away Team</label>
-            <input
-              type="text"
+            <select
               name="awayTeam"
               value={match.awayTeam}
               onChange={handleChange}
               required
               className="border px-2 py-1 rounded w-full"
-            />
+            >
+              <option value="">Select Away Team</option>
+              {teams.map((team) => (
+                <option key={team._id} value={team.name}>
+                  {team.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label>Date</label>
@@ -99,6 +144,7 @@ const MatchScheduleForm = ({ onMatchAdded, setShowModal }) => {
               name="status"
               id=""
               value={match.status}
+              readOnly
               className="border px-2 py-1 rounded w-full"
             />
             {/* <select
@@ -139,9 +185,25 @@ const MatchScheduleForm = ({ onMatchAdded, setShowModal }) => {
             </button>
           </div>
         </form>
+        {match.status === "live" && !match.paused && (
+          <button
+            onClick={() => handlePauseResume(true)}
+            className="bg-yellow-500 text-white px-3 py-1 rounded"
+          >
+            Pause
+          </button>
+        )}
+        {match.status === "live" && match.paused && (
+          <button
+            onClick={() => handlePauseResume(false)}
+            className="bg-green-600 text-white px-3 py-1 rounded"
+          >
+            Resume
+          </button>
+        )}
       </div>
     </div>
   );
 };
 
-export default MatchScheduleForm;
+export default ScheduleForm;

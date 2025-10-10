@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const initialPerson = {
   role: "",
@@ -19,6 +19,16 @@ const PersonForm = ({ onSubmit, setShowModal }) => {
   const [person, setPerson] = useState(initialPerson);
   const [file, setFile] = useState(null);
   const [imageUrl, setImageUrl] = useState("");
+  const [teams, setTeams] = useState([]);
+
+  useEffect(() => {
+    axios.get("http://localhost:4000/allteams").then((res) => {
+      const sortedTeams = (res.data.teams || []).sort((a, b) => {
+        a.name.localeCompare(b.name);
+      });
+      setTeams(sortedTeams);
+    });
+  }, []);
 
   const handleChange = (e) => {
     setPerson({ ...person, [e.target.name]: e.target.value });
@@ -104,14 +114,22 @@ const PersonForm = ({ onSubmit, setShowModal }) => {
           </div>
           <div>
             <label>Team</label>
-            <input
+            <select name="team" id="team" value={person.team} onChange={handleChange} required className="border px-2 py-1 rounded w-full">
+              <option value="">Select Team</option>
+              {teams.map((team) => (
+                <option key={team._id} value={team._id}>
+                  {team.name}
+                </option>
+              ))}
+            </select>
+            {/* <input
               type="text"
               name="team"
               value={person.team}
               onChange={handleChange}
               required
               className="border px-2 py-1 rounded w-full"
-            />
+            /> */}
           </div>
           {person.role === "player" && (
             <>

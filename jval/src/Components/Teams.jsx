@@ -9,7 +9,11 @@ const Teams = () => {
   const fetchTeams = async () => {
     try {
       const res = await axios.get("http://localhost:4000/allteams");
-      setTeams(res.data.teams);
+      // Sort alphabetically by name
+      const sortedTeams = (res.data.teams || []).sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
+      setTeams(sortedTeams);
     } catch (err) {
       console.error("Error fetching teams:", err.message);
     }
@@ -20,7 +24,12 @@ const Teams = () => {
 
     try {
       await axios.delete(`http://localhost:4000/team/${id}`);
-      setTeams((prev) => prev.filter((team) => team._id !== id)); // remove from UI
+      // Remove and sort again
+      setTeams((prev) =>
+        prev
+          .filter((team) => team._id !== id)
+          .sort((a, b) => a.name.localeCompare(b.name))
+      );
     } catch (err) {
       console.error("Error deleting team:", err.message);
     }
@@ -54,7 +63,7 @@ const Teams = () => {
                 <img
                   src={team.logo}
                   alt={team.name}
-                  className="w-18 h-18 object-contain mb-2"
+                  className="w-24 h-24 object-contain mb-2"
                 />
                 <p className="font-medium text-center">{team.name}</p>
                 <button

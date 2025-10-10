@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 const initialEvent = {
@@ -11,25 +11,77 @@ const initialEvent = {
   subOut: "",
 };
 
-const EventForm = ({ matchId, setShowModal }) => {
+const EventForm = ({ matchId, selectedMatch, setShowModal }) => {
   const [event, setEvent] = useState(initialEvent);
+  const [players, setPlayers] = useState([]);
+
+  // Fetch all players on mount
+  useEffect(() => {
+    axios.get("http://localhost:4000/people").then((res) => {
+      setPlayers((res.data.people || []).filter((p) => p.role === "player"));
+    });
+  }, []);
+
+  // Get teams from selectedMatch
+  const teams = selectedMatch
+    ? [selectedMatch.homeTeam, selectedMatch.awayTeam]
+    : [];
+
+  // Filter players by selected team
+  const filteredPlayers = players.filter((p) => p.team === event.team);
 
   const handleChange = (e) => {
-    setEvent({ ...event, [e.target.name]: e.target.value });
+    setEvent((prev) => {
+      const updated = { ...prev, [e.target.name]: e.target.value };
+      // For substitutions, set player to subIn or subOut (choose one)
+      // if (updated.description === "substitution") {
+      //   updated.player = updated.subIn || updated.subOut || "";
+      // }
+      // Reset player if team changes
+      if (e.target.name === "team") {
+        updated.player = "";
+        updated.subIn = "";
+        updated.subOut = "";
+        updated.assist = "";
+      }
+      return updated;
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // For substitution, set player to subIn or subOut
+    let eventToSend = { ...event };
+    if (eventToSend.description === "substitution") {
+      eventToSend.player = eventToSend.subIn || eventToSend.subOut || "";
+    }
     try {
-      // Send as an array of events, you can add multiple events if needed
+      let events = [];
+      try {
+        const res = await axios.get(
+          `http://localhost:4000/matchevents/${matchId}`
+        );
+        if (res.data && res.data.events) {
+          events = [...res.data.events, eventToSend];
+        } else {
+          events = [eventToSend];
+        }
+      } catch (err) {
+        // If 404, treat as no events yet
+        if (err.response && err.response.status === 404) {
+          events = [eventToSend];
+        } else {
+          throw err;
+        }
+      }
+      // Save (create or update) events for this match
       await axios.post("http://localhost:4000/creatematchevent", {
         matchId,
-        events: [event],
+        events,
       });
-      alert("Event added!");
-      setEvent(initialEvent);
-    } catch (err) {
-      alert("Error: " + err.message);
+      setShowModal(false);
+    } catch (error) {
+      alert("Error: " + error.message);
     }
   };
 
@@ -40,28 +92,24 @@ const EventForm = ({ matchId, setShowModal }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label>Team</label>
-            <input
-              type="text"
+            <select
               name="team"
               value={event.team}
               onChange={handleChange}
               required
               className="border px-2 py-1 rounded w-full"
-            />
+            >
+              <option value="">Select Team</option>
+              {teams.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
           </div>
+
           <div>
-            <label>Player</label>
-            <input
-              type="text"
-              name="player"
-              value={event.player}
-              onChange={handleChange}
-              required
-              className="border px-2 py-1 rounded w-full"
-            />
-          </div>
-          <div>
-            <label>Description</label>
+            <label>Event Type</label>
             <select
               name="description"
               value={event.description}
@@ -77,6 +125,123 @@ const EventForm = ({ matchId, setShowModal }) => {
               <option value="own_goal">Own Goal</option>
             </select>
           </div>
+          {/* Optional fields */}
+          {event.description === "yellow_card" ||
+          event.description === "red_card" ||
+          event.description === "penalty" ||
+          event.description === "own_goal" ? (
+            <div>
+              <label>Player</label>
+              <select
+                name="player"
+                value={event.player}
+                onChange={handleChange}
+                required
+                className="border px-2 py-1 rounded w-full"
+                disabled={!event.team}
+              >
+                <option value="">Select Player</option>
+                {filteredPlayers.map((p) => (
+                  <option key={p._id} value={p.name}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+          {event.description === "goal" && (
+            <div className="space-y-4">
+              <div>
+                <label>Player</label>
+                <select
+                  name="player"
+                  value={event.player}
+                  onChange={handleChange}
+                  required
+                  className="border px-2 py-1 rounded w-full"
+                  disabled={!event.team}
+                >
+                  <option value="">Select Scorer</option>
+                  {filteredPlayers.map((p) => (
+                    <option key={p._id} value={p.name}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label>Assist</label>
+                <select
+                  name="assist"
+                  value={event.assist}
+                  onChange={handleChange}
+                  className="border px-2 py-1 rounded w-full"
+                  disabled={!event.team}
+                >
+                  <option value="">Assist (Optional)</option>
+                  {filteredPlayers.map((p) => (
+                    <option key={p._id} value={p.name}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+          {event.description === "substitution" && (
+            <>
+              <div>
+                <label>Sub In</label>
+                {/* <input
+                  type="text"
+                  name="subIn"
+                  value={event.subIn}
+                  onChange={handleChange}
+                  className="border px-2 py-1 rounded w-full"
+                  placeholder="Player In"
+                /> */}
+                <select
+                  name="subIn"
+                  value={event.subIn}
+                  onChange={handleChange}
+                  className="border px-2 py-1 rounded w-full"
+                  disabled={!event.team}
+                >
+                  <option value="">Player In</option>
+                  {filteredPlayers.map((p) => (
+                    <option key={p._id} value={p.name}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label>Sub Out</label>
+                {/* <input
+                  type="text"
+                  name="subOut"
+                  value={event.subOut}
+                  onChange={handleChange}
+                  className="border px-2 py-1 rounded w-full"
+                  placeholder="Player Out"
+                /> */}
+                <select
+                  name="subOut"
+                  value={event.subOut}
+                  onChange={handleChange}
+                  className="border px-2 py-1 rounded w-full"
+                  disabled={!event.team}
+                >
+                  <option value="">Player Out</option>
+                  {filteredPlayers.map((p) => (
+                    <option key={p._id} value={p.name}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
           <div>
             <label>Minute</label>
             <input
@@ -88,49 +253,19 @@ const EventForm = ({ matchId, setShowModal }) => {
               className="border px-2 py-1 rounded w-full"
             />
           </div>
-          <div>
-            <label>Assist</label>
-            <input
-              type="text"
-              name="assist"
-              value={event.assist}
-              onChange={handleChange}
-              className="border px-2 py-1 rounded w-full"
-            />
-          </div>
-          <div>
-            <label>Sub In</label>
-            <input
-              type="text"
-              name="subIn"
-              value={event.subIn}
-              onChange={handleChange}
-              className="border px-2 py-1 rounded w-full"
-            />
-          </div>
-          <div>
-            <label>Sub Out</label>
-            <input
-              type="text"
-              name="subOut"
-              value={event.subOut}
-              onChange={handleChange}
-              className="border px-2 py-1 rounded w-full"
-            />
-          </div>
-          <div className="flex justify-evenly gap-2 mt-7">
+          <div className="flex justify-between mt-6">
             <button
               type="button"
-              className="bg-gray-300 w-32 py-2 rounded cursor-pointer"
+              className="bg-gray-300 px-4 py-2 rounded"
               onClick={() => setShowModal(false)}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="bg-green-600 text-white w-32 py-2 rounded cursor-pointer"
+              className="bg-green-600 text-white px-4 py-2 rounded"
             >
-              Add
+              Add Event
             </button>
           </div>
         </form>
